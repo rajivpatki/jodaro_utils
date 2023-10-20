@@ -4,18 +4,17 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-pandas = "*"
+datetime = "*"
+gspread = "*"
+tqdm = "*"
+mmh3 = "*"
 boto3 = "*"
 botocore = "*"
-tqdm = "*"
-pyarrow = "*"
-gspreed = "*"
-pip = "*"
-pandasgui = "*"
-mmh3 = "*"
-utils-pkg = {file = ".", editable = true}
 
 [dev-packages]
+pandas = "*"
+pyarrow = "*"
+pandasgui = "*"
 
 [requires]
 python_version = "3.10"

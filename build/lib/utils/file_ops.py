@@ -1,25 +1,27 @@
 from functools import lru_cache
 import os
 import re
-import pandas as pd
 import time
 import random
-import numpy as np
-from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor
-from utils_pkg.common_functions import list_distribute_into_blocks
-import pyarrow.parquet as pq
-from pyarrow.lib import ArrowInvalid
-import boto3
-import boto3
-from botocore.errorfactory import ClientError
+from utils.common_functions import list_distribute_into_blocks
 import json
-
 import logging
 _logs_file_ops = logging.getLogger(__name__)
+try:
+    from tqdm import tqdm
+    import numpy as np
+    import pandas as pd
+    import pyarrow.parquet as pq
+    from pyarrow.lib import ArrowInvalid
+    import boto3
+    import boto3
+    from botocore.errorfactory import ClientError
+    s3 = boto3.client('s3')
+    s3_resource = boto3.resource('s3')
+except Exception as e:
+    _logs_file_ops.warn(f'Failed imports: {e}')
 
-s3 = boto3.client('s3')
-s3_resource = boto3.resource('s3')
 
 @lru_cache(maxsize=None)
 def _bucket_prefix(path):

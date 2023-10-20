@@ -1,6 +1,6 @@
 from setuptools import setup
 
-setup(name='utils_pkg',
+setup(name='utils',
       version='0.1',
-      packages=["utils_pkg"])
+      packages=["utils"])
       
