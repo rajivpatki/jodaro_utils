@@ -7,7 +7,7 @@ import random
 import numpy as np
 from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor
-from common_functions import list_distribute_into_blocks
+from utils_pkg.common_functions import list_distribute_into_blocks
 import pyarrow.parquet as pq
 from pyarrow.lib import ArrowInvalid
 import boto3
