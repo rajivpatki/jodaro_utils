@@ -1,7 +1,15 @@
 from functools import lru_cache
 import os
 import re
-
+import pandas as pd
+import time
+import random
+import numpy as np
+from tqdm import tqdm
+from concurrent.futures import ThreadPoolExecutor
+from common_functions import list_distribute_into_blocks
+import pyarrow.parquet as pq
+from pyarrow.lib import ArrowInvalid
 import boto3
 import boto3
 from botocore.errorfactory import ClientError
@@ -197,15 +205,7 @@ def read_parquets(
     Returns:
         pandas.DataFrame: A pandas dataframe with all the parquet files concatenated
     """
-    import pandas as pd
-    import time
-    import random
-    import numpy as np
-    from tqdm import tqdm
-    from concurrent.futures import ThreadPoolExecutor
-    from app.utils.common_functions import list_distribute_into_blocks
-    import pyarrow.parquet as pq
-    from pyarrow.lib import ArrowInvalid
+
     if not any(['s3:' in path, any(['s3:' in _ for _ in path])]):
         threads=500
     def _read_parquet_file(file_path, columns=None, retry_number = 0):

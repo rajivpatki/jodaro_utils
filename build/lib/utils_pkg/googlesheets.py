@@ -1,8 +1,8 @@
 import os
 import site
-from dotenv import load_dotenv
-load_dotenv("python.env")
-load_dotenv('.env')
+#from dotenv import load_dotenv
+#load_dotenv("python.env")
+#load_dotenv('.env')
 site.addsitedir(str(os.getenv("PYTHONPATH")))
 
 import os.path
