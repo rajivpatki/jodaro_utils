@@ -6,6 +6,7 @@ import logging
 _logs_common_func = logging.getLogger(__name__)
 
 try:
+    import pandas
     from pandasgui import show
     show_gui = show
 except:
@@ -168,7 +169,6 @@ def pickle_to_lzma(raw: str, overwrite = True, delete_original = False) -> bool:
             os.remove(raw)
         return success
 
-import pandas
 def column_types(data:pandas.DataFrame, sort_columns:bool = False) -> pandas.DataFrame:
     """Provides a summary of datatypes in a column with the count of the number of each type of datatype for each column
 
