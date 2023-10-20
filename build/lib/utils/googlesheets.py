@@ -1,18 +1,14 @@
-import os
-import site
-#from dotenv import load_dotenv
-#load_dotenv("python.env")
-#load_dotenv('.env')
-site.addsitedir(str(os.getenv("PYTHONPATH")))
-
 import os.path
-import gspread
-import pandas as pd
-
 import logging
 _logs_gsheets = logging.getLogger(name=__name__)
+import gspread
+try:
+    import pandas as pd
+except:
+    pass
 
-def gs_read(spreadsheet_id, worksheet_name=None, range_name=None):
+
+def gs_read(spreadsheet_id, worksheet_name=None, range_name=None, pandas_df = True):
     gc = gspread.oauth(
         credentials_filename='_tokens/google_sheets_api.json',
         authorized_user_filename='_tokens/gs_token.json'
@@ -24,8 +20,11 @@ def gs_read(spreadsheet_id, worksheet_name=None, range_name=None):
     else:
         ws = sh.sheet1
         _logs_gsheets.warning(f'{worksheet_name} was not found. Using {ws.title} instead')
-
-    return pd.DataFrame(ws.get_all_records())
+    data = ws.get_all_records()
+    if pandas_df:
+        return pd.DataFrame(data)
+    else:
+        return data
 
 def gs_write(spreadsheet_id: str, worksheet_name: str, df: pd.DataFrame, append = False):
     """Writes a pandas.DataFrame to the specified spreadsheet_id/worksheet_name. If `append` is set to `True`, the input dataframe is reshaped to match the columns of the sheet's data. NULL values are replaces with empty strings
