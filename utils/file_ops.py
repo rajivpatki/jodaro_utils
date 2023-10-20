@@ -20,7 +20,7 @@ try:
     s3 = boto3.client('s3')
     s3_resource = boto3.resource('s3')
 except Exception as e:
-    _logs_file_ops.warn(f'Failed imports: {e}')
+    _logs_file_ops.warning(f'Failed imports: {e}')
 
 
 @lru_cache(maxsize=None)
