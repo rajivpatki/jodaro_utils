@@ -134,8 +134,8 @@ def read_from_json(path):
         json_content = None
     return json_content
 
-def write_to_json(data_dict, path):
-    """Writes a dict to the specified file as a valid JSON
+def write_to_json(data_dict: dict | list[dict], path):
+    """Writes a dict or list[dict] to the specified file as a valid JSON
     """
     if 's3://' in path:
         bucket, prefix = _bucket_prefix(path)
@@ -148,8 +148,9 @@ def write_to_json(data_dict, path):
         with open(path, 'w') as f:
             json.dump(data_dict, f, ensure_ascii=False)
 
-def write_file(data: bytes, path: str):
-    """Writes bytes data to the path (key) provided for s3 or local storage based on the key
+def write_file(data, path: str):
+    """Writes bytes data to the path (key) provided for s3 or local storage based on the key.
+    Do NOT use this to write dicts to JSON. Use `write_to_json` instead
 
     Args:
         data (bytes): Bytes object
