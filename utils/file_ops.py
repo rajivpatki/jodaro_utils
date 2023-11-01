@@ -8,20 +8,23 @@ from utils.common_functions import list_distribute_into_blocks
 import json
 import logging
 _logs_file_ops = logging.getLogger(__name__)
+
 try:
-    from tqdm import tqdm
-    import numpy as np
-    import pandas as pd
-    import pyarrow.parquet as pq
-    from pyarrow.lib import ArrowInvalid
-    import boto3
     import boto3
     from botocore.errorfactory import ClientError
     s3 = boto3.client('s3')
     s3_resource = boto3.resource('s3')
 except Exception as e:
-    _logs_file_ops.warning(f'Failed imports: {e}')
+    _logs_file_ops.warning(f's3 fileops may not work: {e}')
 
+try:
+    import numpy as np
+    import pandas as pd
+    import pyarrow.parquet as pq
+    from pyarrow.lib import ArrowInvalid
+    from tqdm import tqdm
+except Exception as e:
+    _logs_file_ops.warning(f'Failed imports: {e}')
 
 @lru_cache(maxsize=None)
 def _bucket_prefix(path):
