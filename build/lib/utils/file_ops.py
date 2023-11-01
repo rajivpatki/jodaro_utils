@@ -12,6 +12,9 @@ _logs_file_ops = logging.getLogger(__name__)
 try:
     import boto3
     from botocore.errorfactory import ClientError
+    from dotenv import load_dotenv
+    load_dotenv("python.env")
+    load_dotenv(".env")
     s3 = boto3.client('s3')
     s3_resource = boto3.resource('s3')
 except Exception as e:
