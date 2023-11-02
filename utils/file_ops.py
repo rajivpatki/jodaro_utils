@@ -21,8 +21,8 @@ except Exception as e:
     _logs_file_ops.warning(f's3 fileops may not work: {e}')
 
 try:
-    import numpy as np
     import pandas as pd
+    import numpy as np
     import pyarrow.parquet as pq
     from pyarrow.lib import ArrowInvalid
     from tqdm import tqdm
