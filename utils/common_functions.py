@@ -247,3 +247,41 @@ def measure_time(id: str = None, suffix:str = ''):
     unique_id, thetime = get_uuid(), default_timer()
     _TIMEIT_STORE.update({unique_id: thetime})
     return unique_id
+
+
+def normalise_for_parquet(data: list[dict]) -> pandas.DataFrame:
+    """
+    Normalizes a list of dictionaries to a pandas DataFrame, with valid column names and consistent data types.
+
+    Args:
+        data (list[dict]): A list of dictionaries, where each dictionary represents a row of data.
+
+    Returns:
+        pd.DataFrame: A pandas DataFrame with normalized data.
+    """
+    # This step normalizes the column names by converting them to valid column names and removes any None values
+    data = [{valid_column_name(k):v for k,v in row.items() if v is not None} for row in data]
+    
+    # This step normalizes any nested lists and dictionaries in the data by converting them to valid column names and removing any None values
+    for row in data:
+        for column_name, row_value in row.items():
+            # If the row_value is a list, check if all the elements in the list are of the same type. If not, convert the list to a list of strings
+            if isinstance(row_value, list):
+                if not all([isinstance(_, type(row_value[0])) for _ in row_value]):
+                    row[column_name] = [str(_) for _ in row_value]
+            # If the row_value is a dictionary, convert the dictionary to a dictionary with valid column names and discard None
+            if isinstance(row_value, dict):
+                row[column_name] = {
+                    valid_column_name(k):v for k,v in row_value.items()
+                    if all([v is not None, k is not None, len(v) > 0, len(k) > 0])
+                }
+    # Convert the list of dictionaries to a pandas DataFrame
+    data = pandas.DataFrame(data)
+    # Parquet (pyarrow) does not support lists of multiple types of objects. These are not supported and all objects have to be of the same type. If such an instance is found, the columnm value is converted to string
+    for col in data.columns:
+        # Count the number of unique type of objects in the column
+        data_types = data[col].apply(lambda x: type(x)).unique()
+        # If the column contains a list and the number of unique types is greater than 1, convert the column to string
+        if list in data_types and len(data_types) > 1:
+            data[col] = data[col].astype(str)
+    return data
