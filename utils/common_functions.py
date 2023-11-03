@@ -12,6 +12,31 @@ try:
 except:
     pass
 
+@lru_cache(maxsize=None)
+def valid_column_name(s:str) -> str:
+    """
+    This function takes a string and returns a valid column name by replacing all non-alphanumeric characters with underscores, removing any leading or trailing underscores, converting to lowercase, and adding an underscore to the beginning if the first character is a digit.
+
+    Args:
+    s (str): The string to be converted to a valid column name.
+
+    Returns:
+    str: A valid column name.
+    """
+    # Replace all non-alphanumeric characters with underscores
+    s = re.sub(r'\W+', '_', s)
+    # Remove any leading or trailing underscores
+    s = s.strip('_')
+    # Convert to lowercase
+    s = s.lower()
+    # If the resulting string is empty, return a default name
+    if not s:
+        return 'column'
+    # If the first character is a digit, add an underscore to the beginning
+    if s[0].isdigit():
+        s = '_' + s
+    return s
+
 def get_uuid():
     """Provides a large unique randomly generated filename friendly ID
 
