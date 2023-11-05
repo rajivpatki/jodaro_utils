@@ -140,7 +140,7 @@ def read_from_json(path):
         json_content = None
     return json_content
 
-def write_to_json(data_dict: dict | list[dict], path):
+def write_to_json(data_dict, path):
     """Writes a dict or list[dict] to the specified file as a valid JSON
     """
     if 's3://' in path:
