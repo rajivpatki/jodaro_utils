@@ -195,7 +195,7 @@ def read_file(path: str):
     return data
 
 def read_parquets(
-        path = None,
+        path = None, columns = None,
         threads:int=10, max_retries:int = 5, replace_npnan:bool = False
     ):
     """Reads the specified path (s3 or local) as a pandas dataframe
