@@ -259,6 +259,7 @@ def normalise_for_parquet(data: list[dict]) -> pandas.DataFrame:
     Returns:
         pd.DataFrame: A pandas DataFrame with normalized data.
     """
+    from typing import Iterable
     # This step normalizes the column names by converting them to valid column names and removes any None values
     data = [{valid_column_name(k):v for k,v in row.items() if v is not None} for row in data]
     
@@ -273,7 +274,11 @@ def normalise_for_parquet(data: list[dict]) -> pandas.DataFrame:
             if isinstance(row_value, dict):
                 row[column_name] = {
                     valid_column_name(k):v for k,v in row_value.items()
-                    if all([v is not None, k is not None, len(v) > 0, len(k) > 0])
+                    if all([
+                        v is not None, k is not None,
+                        len(v) if isinstance(v, Iterable) else len(str(v)) > 0,
+                        len(k) > 0
+                    ])
                 }
     # Convert the list of dictionaries to a pandas DataFrame
     data = pandas.DataFrame(data)
