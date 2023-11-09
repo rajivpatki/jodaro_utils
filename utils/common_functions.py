@@ -289,4 +289,8 @@ def normalise_for_parquet(data: list[dict]) -> pandas.DataFrame:
         # If the column contains a list and the number of unique types is greater than 1, convert the column to string
         if list in data_types and len(data_types) > 1:
             data[col] = data[col].astype(str)
+        if dict in data_types and float in data_types and len(data_types) > 2:
+            data[col] = data[col].astype(str)
+        elif dict in data_types and float not in data_types and len(data_types) > 1:
+            data[col] = data[col].astype(str)
     return data
