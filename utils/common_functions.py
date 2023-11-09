@@ -13,7 +13,7 @@ except:
     pass
 
 @lru_cache(maxsize=None)
-def valid_column_name(s:str) -> str:
+def valid_column_name(s) -> str:
     """
     This function takes a string and returns a valid column name by replacing all non-alphanumeric characters with underscores, removing any leading or trailing underscores, converting to lowercase, and adding an underscore to the beginning if the first character is a digit.
 
@@ -24,7 +24,7 @@ def valid_column_name(s:str) -> str:
     str: A valid column name.
     """
     # Replace all non-alphanumeric characters with underscores
-    s = re.sub(r'\W+', '_', s)
+    s = re.sub(r'\W+', '_', str(s))
     # Remove any leading or trailing underscores
     s = s.strip('_')
     # Convert to lowercase
@@ -277,7 +277,7 @@ def normalise_for_parquet(data: list[dict]) -> pandas.DataFrame:
                     if all([
                         v is not None, k is not None,
                         len(v) if isinstance(v, Iterable) else len(str(v)) > 0,
-                        len(k) > 0
+                        len(str(k)) > 0
                     ])
                 }
     # Convert the list of dictionaries to a pandas DataFrame
