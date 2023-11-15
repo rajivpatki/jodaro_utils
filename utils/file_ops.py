@@ -307,4 +307,4 @@ def read_parquets(
         sublists = [future.result() for future in futures]
 
     # Concatenate all the sublists into a single pandas dataframe and return it
-    return pd.concat(sublists)
+    return pd.concat(sublists).reset_index(drop=True)
