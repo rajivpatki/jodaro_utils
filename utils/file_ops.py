@@ -82,7 +82,9 @@ def listdir(folder_path: str) -> list[str]:
                 break
 
         _logs_file_ops.info(f'{len(files)} files + {len(folders)} folders in {bucket_name}/{prefix}')
-        return [f's3://{bucket_name}/{_}' for _ in keys]
+        paths = [f's3://{bucket_name}/{_}' for _ in keys]
+        if folder_path in paths: paths.remove(folder_path)
+        return paths
     else:
         return [os.path.join(folder_path, _) for _ in os.listdir(folder_path)]
 
