@@ -302,10 +302,10 @@ def read_parquets(
         """Read a list of parquet files serially using `_read_parquet_file`
         """
         # Concatenate all the parquet files in the list into a single pandas dataframe
-        df = pd.concat([
+        return pd.concat([
                 _read_parquet_file(file_path=f, columns=columns)
                 for f in tqdm(file_list, desc = 'Reading...', leave = False)
-            ])
+            ]).reset_index(drop=True)
 
     # If the path is a string, check if it's a parquet file or a folder
     if isinstance(path, str):
