@@ -60,6 +60,8 @@ def listdir(folder_path: str) -> list[str]:
     """
     if 's3://' in folder_path:
         folder_path = folder_path.replace('\\', '/')
+        if folder_path[-1] != '/':
+            folder_path += '/'
         # create S3 client
         s3 = boto3.client('s3')
         # specify bucket and prefix (folder path)
