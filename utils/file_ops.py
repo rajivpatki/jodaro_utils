@@ -48,7 +48,43 @@ def list_s3(folder_path):
     else:
         return []
 
-def listdir(folder_path: str) -> list[str]:
+def filter_paths(paths, filters=None):
+    if filters is None:
+        return paths
+
+    import re
+    from datetime import datetime
+    def validate_operator(op):
+        # Regex to match only valid comparison operators
+        if not re.match(r'^[\<\>\=\!]+$', op):
+            raise ValueError(f"Invalid operator: {op}")
+
+    def apply_filters(path, filters):
+        for key, op, value in filters:
+            validate_operator(op)
+            # Extract the value from the path using regular expression
+            match = re.search(fr'{key}=([^/]+)', path)
+            if not match:
+                return False
+            extracted_value = match.group(1)
+
+            # Convert to date if value is in date format
+            if re.match(r'\d{4}-\d{2}-\d{2}', value):
+                extracted_value = datetime.strptime(extracted_value, '%Y-%m-%d')
+                value = datetime.strptime(value, '%Y-%m-%d')
+                comparison_string = f"extracted_value {op} value"
+            else:
+                comparison_string = f"'{extracted_value}' {op} '{value}'"
+
+            # Evaluate the comparison using eval
+            if not eval(comparison_string):
+                return False
+        return True
+
+    # Apply filters to paths
+    return [path for path in paths if apply_filters(path, filters)]
+
+def listdir(folder_path: str, recurse=False, filters=None) -> list[str]:
     """
     Returns a list of full paths to the contents of a specified location, accepts s3
 
@@ -68,27 +104,33 @@ def listdir(folder_path: str) -> list[str]:
         bucket_name, prefix = _bucket_prefix(folder_path)
         if prefix[-1] != '/':
             prefix += '/'
+        def get_keys(bucket_name, prefix, recurse=False):
+            keys = []
+            kwargs = dict(Bucket=bucket_name, Prefix=prefix, Delimiter='/')
+            while True:
+                resp = s3.list_objects_v2(**kwargs)
+                files, folders = resp.get('Contents', []), resp.get('CommonPrefixes', [])
+                for obj in files:
+                    keys.append(obj['Key'])
+                for obj in folders:
+                    if recurse:
+                        keys += get_keys(bucket_name, obj['Prefix'], recurse)
+                    else:
+                        keys.append(obj['Prefix'])
+                try:
+                    kwargs['ContinuationToken'] = resp['NextContinuationToken']
+                except KeyError:
+                    break
+            # _logs_file_ops.info(f'{len(files)} files + {len(folders)} folders in {bucket_name}/{prefix}')
+            return keys
 
-        keys = []
-        kwargs = dict(Bucket=bucket_name, Prefix=prefix, Delimiter='/')
-        while True:
-            resp = s3.list_objects_v2(**kwargs)
-            files, folders = resp.get('Contents', []), resp.get('CommonPrefixes', [])
-            for obj in files:
-                keys.append(obj['Key'])
-            for obj in folders:
-                keys.append(obj['Prefix'])
-            try:
-                kwargs['ContinuationToken'] = resp['NextContinuationToken']
-            except KeyError:
-                break
-
-        _logs_file_ops.info(f'{len(files)} files + {len(folders)} folders in {bucket_name}/{prefix}')
+        keys = get_keys(bucket_name=bucket_name, prefix=prefix, recurse=recurse)
         paths = [f's3://{bucket_name}/{_}' for _ in keys]
-        if folder_path in paths: paths.remove(folder_path)
-        return paths
+        if folder_path in paths:
+            paths.remove(folder_path)
     else:
-        return [os.path.join(folder_path, _) for _ in os.listdir(folder_path)]
+        paths = [os.path.join(folder_path, _) for _ in os.listdir(folder_path)]
+    return filter_paths(paths=paths, filters=filters)
 
 def touch_file(file_path: str) -> None:
     """Creates an empty file if it does not exist
@@ -199,8 +241,7 @@ def read_file(path: str):
     return data
 
 def read_parquets(
-        path = None, columns = None,
-        threads:int=10, max_retries:int = 5, replace_npnan:bool = False
+        path = None, columns = None, threads:int=10, max_retries:int = 5, filters = None
     ):
     """Reads the specified path (s3 or local) as a pandas dataframe
 
@@ -217,7 +258,7 @@ def read_parquets(
         - Do NOT exceed 10 for s3, else you may hit the rate limit
         
         max_retries (int, optional): Max times to retry
-        replace_npnan (bool, optional): Replace nan values?
+        replace_npnan (bool, !DEPRECATED): Replace nan values?
 
     Returns:
         pandas.DataFrame: A pandas dataframe with all the parquet files concatenated
@@ -253,11 +294,8 @@ def read_parquets(
                 return None
             # If the exception is not an ArrowInvalid, log a warning and retry
             _logs_file_ops.warning(f'Retrying: {file_path}: {e}')
-            # Full jitter wait
-            temp = min(10, 2**retry_number)
-            wait_time = temp/2 + random.uniform(0, temp)
-            time.sleep(wait_time)
-            # Retry
+            # Full jitter wait before retry
+            time.sleep(min(10, 2**retry_number)/2 + random.uniform(0, min(10, 2**retry_number)))
             return _read_parquet_file(file_path, columns, retry_number+1)
 
     def _read_list_of_parquet_files(file_list: list[str], columns=None):
@@ -268,31 +306,26 @@ def read_parquets(
                 _read_parquet_file(file_path=f, columns=columns)
                 for f in tqdm(file_list, desc = 'Reading...', leave = False)
             ])
-        # If replace_npnan is False, return the dataframe as is
-        if replace_npnan is False:
-            return df
-        # If replace_npnan is True, replace all np.nan values with the specified value and return the dataframe
-        else:
-            _logs_file_ops.warning(f'[!] Replace np.nan with {replace_npnan}')
-            return df.replace(np.nan, replace_npnan)
 
     # If the path is a string, check if it's a parquet file or a folder
     if isinstance(path, str):
         if '.parquet' in path:
             # If it's a parquet file, read it and return the pandas dataframe
-            return pd.read_parquet(path=path, columns=columns)
+            list_of_files = [path]
         else:
             # If it's a folder, get a list of all the parquet files in the folder
-            list_of_files = [_ for _ in listdir(path) if '.parquet' in _]
+            list_of_files = [
+                _ for _ in listdir(folder_path=path, recurse=True, filters=filters)
+                if '.parquet' in _
+            ]
     # If the path is a list, use the list as the list of parquet files
     elif isinstance(path, list):
-        list_of_files = path
+        list_of_files = [_ for _ in filter_paths(paths=path, filters=filters) if '.parquet' in _]
 
     # If there are no parquet files in the list, log a warning and return None
     if len(list_of_files) == 0:
         _logs_file_ops.warning(f'No .parquet files found in {path}')
         return None
-
     # If threads is specified, distribute the list of parquet files into blocks and read them in parallel
     if threads:
         file_list_of_lists = list_distribute_into_blocks(list_of_files, threads)
